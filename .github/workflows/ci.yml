@@ -1,0 +1,79 @@
+name: CI - Build y pruebas
+
+# Cuándo se dispara el pipeline
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # permite lanzarlo a mano desde la pestaña Actions
+
+permissions:
+  contents: read
+  checks: write # necesario para publicar el reporte de pruebas
+
+jobs:
+  build-and-test:
+    name: Compilar y probar
+    runs-on: ubuntu-latest
+
+    # Postgres real como "servicio" del job: el pipeline levanta su propia base
+    # de datos efímera, igual que hará luego para el ambiente de despliegue.
+    services:
+      postgres:
+        image: postgres:16.4
+        env:
+          POSTGRES_DB: transferencias
+          POSTGRES_USER: transferencias
+          POSTGRES_PASSWORD: transferencias
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U transferencias"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Se sobrescribe la configuración de application.yml por variables de entorno:
+      # el mismo artefacto sirve para local, CI y producción sin recompilar (12-factor app).
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/transferencias
+      SPRING_DATASOURCE_USERNAME: transferencias
+      SPRING_DATASOURCE_PASSWORD: transferencias
+      SPRING_DOCKER_COMPOSE_ENABLED: "false" # en CI la BD ya la da el "services" de arriba
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Compilar
+        run: mvn -B -ntp compile
+
+      - name: Ejecutar pruebas
+        run: mvn -B -ntp test
+
+      - name: Publicar resultados de pruebas
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Resultados JUnit
+          path: target/surefire-reports/*.xml
+          reporter: java-junit
+
+      - name: Empaquetar (solo en push a main)
+        if: github.event_name == 'push'
+        run: mvn -B -ntp package -DskipTests
+
+      - name: Subir artefacto
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: transferencias-service-jar
+          path: target/*.jar
