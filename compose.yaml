@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: 'postgres:16.4'
+    container_name: transferencias-db
+    environment:
+      - 'POSTGRES_DB=transferencias'
+      - 'POSTGRES_PASSWORD=transferencias'
+      - 'POSTGRES_USER=transferencias'
+    ports:
+      # 5433 en tu máquina -> 5432 dentro del contenedor.
+      # Se usa 5433 porque el 5432 ya está ocupado por el PostgreSQL nativo de Windows.
+      - '5433:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U transferencias']
+      interval: 5s
+      timeout: 5s
+      retries: 5

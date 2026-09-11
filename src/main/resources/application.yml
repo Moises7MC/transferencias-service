@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: transferencias-service
+
+  datasource:
+    # Puerto 5433: el 5432 lo ocupa el PostgreSQL nativo de Windows, no el contenedor.
+    url: jdbc:postgresql://localhost:5433/transferencias
+    username: transferencias
+    password: transferencias
+
+  jpa:
+    hibernate:
+      ddl-auto: validate   # el esquema lo crea Flyway, no Hibernate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  docker:
+    compose:
+      enabled: true
+      lifecycle-management: start-and-stop
+
+# Actuator expone /actuator/health, usado por el smoke test del pipeline
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.hibernate.SQL: debug
