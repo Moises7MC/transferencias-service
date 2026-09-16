@@ -78,6 +78,21 @@ class TransferenciaControllerTest {
     }
 
     @Test
+    void devuelve400CuandoElCuerpoNoEsJsonValido() throws Exception {
+        // Un número con guion (001-0002) no es JSON válido: debe ser 400 (culpa del
+        // cliente), nunca 500. Antes de este fix caía en el manejador genérico y
+        // devolvía 500 "Ocurrió un error inesperado".
+        var jsonMalformado = """
+                {"claveIdempotencia": "x", "cuentaOrigenId": 1, "cuentaDestinoId": 001-0002, "monto": 10}
+                """;
+
+        mockMvc.perform(post("/api/transferencias")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMalformado))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void devuelve404CuandoLaCuentaNoExiste() throws Exception {
         var request = new TransferenciaRequest("clave-3", 99L, 2L, new BigDecimal("10.00"));
         when(transferenciaService.transferir(any())).thenThrow(new CuentaNoEncontradaException(99L));
