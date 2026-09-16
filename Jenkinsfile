@@ -70,8 +70,16 @@ pipeline {
             post {
                 // "always" corre pase lo que pase: si las pruebas fallan, igual
                 // queremos ver el reporte para saber CUÁL falló, no solo que falló.
+                //
+                // El paso "junit" (que interpreta los XML y muestra una gráfica de
+                // pasa/falla en Jenkins) requiere el plugin "JUnit", no instalado en
+                // este Jenkins minimal. Se archivan los reportes en crudo en su lugar:
+                // sin depender de un plugin extra, siguen quedando disponibles para
+                // descargar y revisar en cada build.
                 always {
-                    junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
+                    archiveArtifacts artifacts: 'target/surefire-reports/*.xml',
+                                      allowEmptyArchive: true,
+                                      fingerprint: false
                 }
             }
         }
