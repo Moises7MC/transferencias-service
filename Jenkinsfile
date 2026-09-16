@@ -18,6 +18,20 @@ pipeline {
         // agente de Jenkins tenga Maven instalado: el propio proyecto lo descarga.
         IMAGE_NAME = "transferencias-service"
         IMAGE_TAG  = "${env.BUILD_NUMBER}"
+
+        // application.yml apunta a localhost:5433, que solo existe desde Windows
+        // (esa es la puerta que Docker expone hacia el host). Dentro del contenedor
+        // de Jenkins, "localhost" es el propio Jenkins, no Windows. Por eso se
+        // sobrescribe aquí para usar el nombre del servicio dentro de la red interna
+        // de Docker ("postgres", puerto 5432, el de adentro del contenedor), la misma
+        // técnica que ya se usa en el workflow de GitHub Actions.
+        SPRING_DATASOURCE_URL      = "jdbc:postgresql://postgres:5432/transferencias"
+        SPRING_DATASOURCE_USERNAME = "transferencias"
+        SPRING_DATASOURCE_PASSWORD = "transferencias"
+        // El agente de Jenkins no tiene el cliente docker instalado, así que no puede
+        // levantar el compose.yaml por su cuenta; se usa el Postgres que ya está
+        // corriendo (conectado a esta misma red con "docker network connect").
+        SPRING_DOCKER_COMPOSE_ENABLED = "false"
     }
 
     // Ajustes generales del pipeline.
