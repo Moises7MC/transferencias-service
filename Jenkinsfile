@@ -22,7 +22,8 @@ pipeline {
 
     // Ajustes generales del pipeline.
     options {
-        timestamps()                              // cada línea del log lleva su hora
+        // timestamps() requiere el plugin Timestamper, no instalado en este Jenkins
+        // minimal; se omite para no depender de un plugin extra.
         buildDiscarder(logRotator(numToKeepStr: '10')) // no acumula builds viejos para siempre
         timeout(time: 20, unit: 'MINUTES')        // si algo se cuelga, Jenkins lo corta
     }
