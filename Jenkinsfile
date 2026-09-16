@@ -33,6 +33,10 @@ pipeline {
             steps {
                 echo "Descargando el código fuente..."
                 checkout scm
+                // Git en Windows no siempre conserva el bit de ejecución de mvnw al
+                // subir el commit. Se fuerza aquí para que el agente Linux de Jenkins
+                // pueda ejecutarlo sin depender de que el permiso venga bien desde el repo.
+                sh 'chmod +x mvnw'
             }
         }
 
